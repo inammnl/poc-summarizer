@@ -1,4 +1,5 @@
 import os, tempfile
+import base64
 import streamlit as st
 from langchain.llms.openai import OpenAI
 from langchain.vectorstores.chroma import Chroma
@@ -8,6 +9,12 @@ from langchain.document_loaders import PyPDFLoader
 from streamlit_supabase_auth import login_form, logout_button
 from dotenv import load_dotenv
 
+
+def embed_viewer(file_path):
+    with open(file_path, "rb") as f:
+        base64_pdf = base64.b64encode(f.read()).decode('utf-8')
+    pdf_display = f'<iframe src="data:application/pdf;base64,{base64_pdf}" width="700" height="500" type="application/pdf"></iframe>'
+    st.markdown(pdf_display, unsafe_allow_html=True)
 
 load_dotenv()
 
@@ -38,6 +45,7 @@ if session:
         logout_button()
 
     # Check if the 'Summarize' button is clicked
+
     if st.button("Summarize"):
         try:
             # Save uploaded file temporarily to disk, load and split the file into pages, delete temp file
@@ -45,6 +53,7 @@ if session:
                 tmp_file.write(source_doc.read())
             loader = PyPDFLoader(tmp_file.name)
             pages = loader.load_and_split()
+            embed_viewer(tmp_file.name)
             os.remove(tmp_file.name)
             
             # Create embeddings for the pages and insert into Chroma database
